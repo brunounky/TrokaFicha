@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:inicial/presentation/inicial.dart';
+import 'package:troka_ficha/src/features/inicial/presentation/inicial.dart'; 
 
 void main() {
   runApp(const MyApp());
