@@ -1,7 +1,7 @@
 name: troka_ficha
 description: A new Flutter project.
 
-publish_to: 'none'
+publish_to: 'none' # Remove this line if you want to publish to pub.dev
 
 version: 1.0.0+1
 
@@ -13,11 +13,16 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.2
   shared_preferences: ^2.2.0
+  isar: ^3.1.0+1
+  isar_flutter_libs: ^3.1.0+1
+  path_provider: ^2.1.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^2.0.0
+  isar_generator: ^3.1.0+1
+  build_runner: ^2.4.6
 
 flutter:
   uses-material-design: true
