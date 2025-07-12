@@ -6,26 +6,12 @@ part of 'product_providers.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$isarHash() => r'aa7362202dcb05c3aab54f42f03e00118a64864b';
-
-/// See also [isar].
-@ProviderFor(isar)
-final isarProvider = AutoDisposeFutureProvider<Isar>.internal(
-  isar,
-  name: r'isarProvider',
-  debugGetCreateSourceHash:
-      const bool.fromEnvironment('dart.vm.product') ? null : _$isarHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
-
-typedef IsarRef = AutoDisposeFutureProviderRef<Isar>;
-String _$productRepositoryHash() => r'2584dcafec21c0f758831375e95968b99c176361';
+String _$productRepositoryHash() => r'e507522953b435c1eaf400e83e3c40c482868ca5';
 
 /// See also [productRepository].
 @ProviderFor(productRepository)
 final productRepositoryProvider =
-    AutoDisposeFutureProvider<ProductRepository>.internal(
+    AutoDisposeProvider<ProductRepository>.internal(
   productRepository,
   name: r'productRepositoryProvider',
   debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
@@ -35,12 +21,12 @@ final productRepositoryProvider =
   allTransitiveDependencies: null,
 );
 
-typedef ProductRepositoryRef = AutoDisposeFutureProviderRef<ProductRepository>;
-String _$watchProductsHash() => r'bea0b505c739922c6400335b7f6b9dfd742e32bd';
+typedef ProductRepositoryRef = AutoDisposeProviderRef<ProductRepository>;
+String _$watchProductsHash() => r'710a87fe0d976fcf8b351fbe93b57fcc98063fca';
 
 /// See also [watchProducts].
 @ProviderFor(watchProducts)
-final watchProductsProvider = AutoDisposeFutureProvider<WatchProducts>.internal(
+final watchProductsProvider = AutoDisposeProvider<WatchProducts>.internal(
   watchProducts,
   name: r'watchProductsProvider',
   debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
@@ -50,12 +36,12 @@ final watchProductsProvider = AutoDisposeFutureProvider<WatchProducts>.internal(
   allTransitiveDependencies: null,
 );
 
-typedef WatchProductsRef = AutoDisposeFutureProviderRef<WatchProducts>;
-String _$saveProductHash() => r'7dc561c3dd46eaebd027ddfc9847db9867162271';
+typedef WatchProductsRef = AutoDisposeProviderRef<WatchProducts>;
+String _$saveProductHash() => r'59c75999ee7d38fc29aee1d5e92dfd82d9e42304';
 
 /// See also [saveProduct].
 @ProviderFor(saveProduct)
-final saveProductProvider = AutoDisposeFutureProvider<SaveProduct>.internal(
+final saveProductProvider = AutoDisposeProvider<SaveProduct>.internal(
   saveProduct,
   name: r'saveProductProvider',
   debugGetCreateSourceHash:
@@ -64,12 +50,12 @@ final saveProductProvider = AutoDisposeFutureProvider<SaveProduct>.internal(
   allTransitiveDependencies: null,
 );
 
-typedef SaveProductRef = AutoDisposeFutureProviderRef<SaveProduct>;
-String _$deleteProductHash() => r'aeea1e5f1cd92d07b97a6a6035d2b6af6a4749a6';
+typedef SaveProductRef = AutoDisposeProviderRef<SaveProduct>;
+String _$deleteProductHash() => r'5e900a09690e5ab35aa1b0db8081c1ea8d2a6c6b';
 
 /// See also [deleteProduct].
 @ProviderFor(deleteProduct)
-final deleteProductProvider = AutoDisposeFutureProvider<DeleteProduct>.internal(
+final deleteProductProvider = AutoDisposeProvider<DeleteProduct>.internal(
   deleteProduct,
   name: r'deleteProductProvider',
   debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
@@ -79,8 +65,8 @@ final deleteProductProvider = AutoDisposeFutureProvider<DeleteProduct>.internal(
   allTransitiveDependencies: null,
 );
 
-typedef DeleteProductRef = AutoDisposeFutureProviderRef<DeleteProduct>;
-String _$productListHash() => r'7a7321fee72143487cd1176666f2c0fa26d080d2';
+typedef DeleteProductRef = AutoDisposeProviderRef<DeleteProduct>;
+String _$productListHash() => r'888707dcff84cb214b439c8d81d373e2e0f15096';
 
 /// See also [productList].
 @ProviderFor(productList)

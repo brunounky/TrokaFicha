@@ -31,8 +31,7 @@ class ProductList extends ConsumerWidget {
 
     if (confirmed == true) {
       try {
-        // CORREÇÃO: Aguardamos o provider do caso de uso estar pronto.
-        final deleteUseCase = await ref.read(deleteProductProvider.future);
+        final deleteUseCase = ref.read(deleteProductProvider);
         await deleteUseCase.call(product.id);
 
         if (context.mounted) {
@@ -58,7 +57,6 @@ class ProductList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Acessar o stream de produtos agora é seguro, pois o provider lida com o estado de loading/error.
     final productsAsyncValue = ref.watch(productListProvider);
     final editingProduct = ref.watch(editingProductProvider);
     final theme = Theme.of(context);
