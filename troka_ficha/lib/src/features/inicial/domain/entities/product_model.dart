@@ -1,6 +1,6 @@
 import 'package:isar/isar.dart';
 
-part 'product.g.dart';
+part 'product_model.g.dart';
 
 @collection
 @Name("ProductCollection") 
