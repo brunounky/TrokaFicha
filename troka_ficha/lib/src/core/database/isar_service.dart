@@ -1,7 +1,7 @@
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:troka_ficha/src/features/inicial/domain/entities/sale_ticket_model.dart';
-import 'package:troka_ficha/src/features/inicial/domain/entities/product_model.dart';
+import 'package:troka_ficha/src/features/products/domain/entities/sale_ticket_model.dart';
+import 'package:troka_ficha/src/features/products/domain/entities/product.dart';
 
 class IsarService {
   late Future<Isar> db;
