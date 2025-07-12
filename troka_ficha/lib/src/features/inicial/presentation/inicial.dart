@@ -16,6 +16,7 @@ class _InicialScreenState extends State<InicialScreen> {
   Map<Product, int> _cart = {};
   double _currentSaleTotal = 0.0;
   String _currentEventName = "Evento Principal";
+  String _selectedPaymentMethod = 'Dinheiro';
 
   @override
   void initState() {
@@ -25,21 +26,9 @@ class _InicialScreenState extends State<InicialScreen> {
 
   Future<void> _loadProducts() async {
     final products = await isarService.getAllProducts();
-    if (products.isEmpty) {
-      await isarService.addProduct(Product(name: 'Camiseta P', unitValue: 35.00, eventName: _currentEventName));
-      await isarService.addProduct(Product(name: 'Camiseta M', unitValue: 35.00, eventName: _currentEventName));
-      await isarService.addProduct(Product(name: 'Boné', unitValue: 25.00, eventName: _currentEventName));
-      await isarService.addProduct(Product(name: 'Caneca', unitValue: 20.00, eventName: _currentEventName));
-      await isarService.addProduct(Product(name: 'Chaveiro', unitValue: 10.00, eventName: _currentEventName));
-      final updatedProducts = await isarService.getAllProducts();
-      setState(() {
-        _availableProducts = updatedProducts;
-      });
-    } else {
-      setState(() {
-        _availableProducts = products;
-      });
-    }
+    setState(() {
+      _availableProducts = products;
+    });
   }
 
   void _addProductToCart(Product product) {
@@ -60,6 +49,16 @@ class _InicialScreenState extends State<InicialScreen> {
       }
       _updateTotal();
     });
+  }
+
+  void _clearCart() {
+    setState(() {
+      _cart.clear();
+      _currentSaleTotal = 0.0;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Carrinho limpo!')),
+    );
   }
 
   void _updateTotal() {
@@ -83,7 +82,7 @@ class _InicialScreenState extends State<InicialScreen> {
       unitValue: _currentSaleTotal / totalQuantity,
       quantity: totalQuantity,
       totalValue: _currentSaleTotal,
-      paymentMethod: 'Dinheiro',
+      paymentMethod: _selectedPaymentMethod,
       saleDate: DateTime.now(),
     );
 
@@ -101,14 +100,19 @@ class _InicialScreenState extends State<InicialScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text('Vendas - $_currentEventName'),
+        backgroundColor: colorScheme.inversePrimary,
+        title: Text(
+          'Vendas - $_currentEventName',
+          style: TextStyle(color: colorScheme.onInverseSurface, fontWeight: FontWeight.bold),
+        ),
         leading: Builder(
           builder: (BuildContext context) {
             return IconButton(
-              icon: const Icon(Icons.menu),
+              icon: Icon(Icons.menu, color: colorScheme.onInverseSurface),
               onPressed: () {
                 Scaffold.of(context).openDrawer();
               },
@@ -122,18 +126,19 @@ class _InicialScreenState extends State<InicialScreen> {
           children: <Widget>[
             DrawerHeader(
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary,
+                color: colorScheme.primary,
               ),
-              child: const Text(
+              child: Text(
                 'Menu',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: colorScheme.onPrimary,
                   fontSize: 24,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),
             ListTile(
-              leading: const Icon(Icons.add_shopping_cart),
+              leading: Icon(Icons.add_shopping_cart, color: colorScheme.secondary),
               title: const Text('Cadastro de Produto'),
               onTap: () async {
                 Navigator.pop(context);
@@ -142,25 +147,6 @@ class _InicialScreenState extends State<InicialScreen> {
                   MaterialPageRoute(builder: (context) => const CadastroProdutosScreen()),
                 );
                 _loadProducts();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.settings),
-              title: const Text('Configurações do Sistema'),
-              onTap: () {
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.list_alt),
-              title: const Text('Ver Fichas de Venda'),
-              onTap: () async {
-                Navigator.pop(context);
-                final allTickets = await isarService.getAllSaleTickets();
-                print('Todas as Fichas de Venda:');
-                for (var ticket in allTickets) {
-                  print('  - ${ticket.productName} (x${ticket.quantity}) - R\$ ${ticket.totalValue.toStringAsFixed(2)}');
-                }
               },
             ),
           ],
@@ -177,28 +163,39 @@ class _InicialScreenState extends State<InicialScreen> {
                   padding: const EdgeInsets.all(16.0),
                   child: Text(
                     'Produtos Disponíveis',
-                    style: Theme.of(context).textTheme.headlineSmall,
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          color: colorScheme.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
                   ),
                 ),
                 Expanded(
                   child: _availableProducts.isEmpty
-                      ? const Center(child: Text('Nenhum produto disponível. Adicione alguns!'))
+                      ? Center(
+                          child: Text(
+                            'Nenhum produto disponível. Cadastre produtos na opção "Cadastro de Produto" do menu.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 16, color: colorScheme.onSurfaceVariant),
+                          ),
+                        )
                       : GridView.builder(
                           padding: const EdgeInsets.all(16.0),
                           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 2,
                             crossAxisSpacing: 16.0,
                             mainAxisSpacing: 16.0,
-                            childAspectRatio: 3 / 2,
+                            childAspectRatio: 1.2,
                           ),
                           itemCount: _availableProducts.length,
                           itemBuilder: (context, index) {
                             final product = _availableProducts[index];
                             return Card(
                               elevation: 4,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              color: colorScheme.surfaceVariant,
                               child: InkWell(
                                 onTap: () => _addProductToCart(product),
+                                borderRadius: BorderRadius.circular(16),
                                 child: Padding(
                                   padding: const EdgeInsets.all(12.0),
                                   child: Column(
@@ -206,13 +203,15 @@ class _InicialScreenState extends State<InicialScreen> {
                                     children: [
                                       Text(
                                         product.name,
-                                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colorScheme.onSurfaceVariant),
                                         textAlign: TextAlign.center,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
                                       const SizedBox(height: 8),
                                       Text(
                                         'R\$ ${product.unitValue.toStringAsFixed(2)}',
-                                        style: const TextStyle(fontSize: 16, color: Colors.green),
+                                        style: TextStyle(fontSize: 16, color: colorScheme.tertiary, fontWeight: FontWeight.w600),
                                       ),
                                     ],
                                   ),
@@ -225,7 +224,7 @@ class _InicialScreenState extends State<InicialScreen> {
               ],
             ),
           ),
-          const VerticalDivider(width: 1, thickness: 1),
+          VerticalDivider(width: 1, thickness: 1, color: colorScheme.outline),
           Expanded(
             flex: 2,
             child: Column(
@@ -233,14 +232,34 @@ class _InicialScreenState extends State<InicialScreen> {
               children: [
                 Padding(
                   padding: const EdgeInsets.all(16.0),
-                  child: Text(
-                    'Carrinho de Compras',
-                    style: Theme.of(context).textTheme.headlineSmall,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Carrinho de Compras',
+                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                              color: colorScheme.primary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                      if (_cart.isNotEmpty)
+                        IconButton(
+                          icon: Icon(Icons.clear_all, color: colorScheme.error),
+                          tooltip: 'Limpar Carrinho',
+                          onPressed: _clearCart,
+                        ),
+                    ],
                   ),
                 ),
                 Expanded(
                   child: _cart.isEmpty
-                      ? const Center(child: Text('Carrinho vazio.'))
+                      ? Center(
+                          child: Text(
+                            'Carrinho vazio. Adicione produtos da lista ao lado.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 16, color: colorScheme.onSurfaceVariant),
+                          ),
+                        )
                       : ListView.builder(
                           padding: const EdgeInsets.all(16.0),
                           itemCount: _cart.length,
@@ -249,18 +268,28 @@ class _InicialScreenState extends State<InicialScreen> {
                             final quantity = _cart[product]!;
                             return Card(
                               margin: const EdgeInsets.symmetric(vertical: 4.0),
+                              elevation: 1,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              color: colorScheme.surface,
                               child: ListTile(
-                                title: Text('${product.name} (x$quantity)'),
-                                subtitle: Text('R\$ ${(product.unitValue * quantity).toStringAsFixed(2)}'),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                                title: Text(
+                                  '${product.name} (x$quantity)',
+                                  style: TextStyle(color: colorScheme.onSurface, fontWeight: FontWeight.w500),
+                                ),
+                                subtitle: Text(
+                                  'R\$ ${(product.unitValue * quantity).toStringAsFixed(2)}',
+                                  style: TextStyle(color: colorScheme.onSurfaceVariant),
+                                ),
                                 trailing: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     IconButton(
-                                      icon: const Icon(Icons.remove_circle_outline),
+                                      icon: Icon(Icons.remove_circle_outline, color: colorScheme.tertiary),
                                       onPressed: () => _removeProductFromCart(product),
                                     ),
                                     IconButton(
-                                      icon: const Icon(Icons.add_circle_outline),
+                                      icon: Icon(Icons.add_circle_outline, color: colorScheme.tertiary),
                                       onPressed: () => _addProductToCart(product),
                                     ),
                                   ],
@@ -276,16 +305,50 @@ class _InicialScreenState extends State<InicialScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
+                        'Forma de Pagamento:',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: colorScheme.onSurface),
+                      ),
+                      const SizedBox(height: 8),
+                      DropdownButtonFormField<String>(
+                        value: _selectedPaymentMethod,
+                        decoration: InputDecoration(
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          filled: true,
+                          fillColor: colorScheme.surfaceVariant,
+                        ),
+                        dropdownColor: colorScheme.surfaceVariant,
+                        style: TextStyle(color: colorScheme.onSurfaceVariant),
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            _selectedPaymentMethod = newValue!;
+                          });
+                        },
+                        items: <String>['Dinheiro', 'Cartão de Crédito', 'Cartão de Débito', 'PIX']
+                            .map<DropdownMenuItem<String>>((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
                         'Total da Compra: R\$ ${_currentSaleTotal.toStringAsFixed(2)}',
-                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: colorScheme.primary),
                       ),
                       const SizedBox(height: 16),
                       ElevatedButton.icon(
                         onPressed: _emitSaleTicket,
-                        icon: const Icon(Icons.check),
+                        icon: const Icon(Icons.check_circle_outline),
                         label: const Text('Emitir Venda'),
                         style: ElevatedButton.styleFrom(
-                          minimumSize: const Size.fromHeight(50),
+                          minimumSize: const Size.fromHeight(55),
+                          backgroundColor: colorScheme.tertiary,
+                          foregroundColor: colorScheme.onTertiary,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+                          textStyle: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                          elevation: 5,
                         ),
                       ),
                     ],

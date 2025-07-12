@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:troka_ficha/src/features/inicial/presentation/inicial.dart';
+import 'package:troka_ficha/src/core/app_globals.dart';
 import 'package:troka_ficha/src/core/database/isar_service.dart';
 
-late IsarService isarService;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   isarService = IsarService();
+
+  await isarService.db;
 
   runApp(const MyApp());
 }
