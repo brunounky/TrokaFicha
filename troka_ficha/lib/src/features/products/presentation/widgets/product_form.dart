@@ -51,7 +51,8 @@ class _ProductFormState extends ConsumerState<ProductForm> {
     }
 
     try {
-      final saveUseCase = ref.read(saveProductProvider);
+      // CORREÇÃO: Aguardamos o provider do caso de uso estar pronto antes de chamá-lo.
+      final saveUseCase = await ref.read(saveProductProvider.future);
       await saveUseCase.call(productToSave);
 
       _clearForm();
