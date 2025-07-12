@@ -14,8 +14,8 @@ extension GetProductCollection on Isar {
 }
 
 const ProductSchema = CollectionSchema(
-  name: r'Product',
-  id: -6222113721139403729,
+  name: r'ProductCollection',
+  id: 8879472144375957566,
   properties: {
     r'eventName': PropertySchema(
       id: 0,
