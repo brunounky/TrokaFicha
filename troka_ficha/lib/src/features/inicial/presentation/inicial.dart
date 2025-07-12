@@ -16,12 +16,20 @@ class _InicialScreenState extends State<InicialScreen> {
   Map<Product, int> _cart = {};
   double _currentSaleTotal = 0.0;
   String _currentEventName = "Evento Principal";
-  String _selectedPaymentMethod = 'Dinheiro';
+  String _selectedPaymentMethodInDialog = 'Dinheiro';
+  final TextEditingController _cashReceivedController = TextEditingController();
+  double _changeDue = 0.0;
 
   @override
   void initState() {
     super.initState();
     _loadProducts();
+  }
+
+  @override
+  void dispose() {
+    _cashReceivedController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadProducts() async {
@@ -73,40 +81,278 @@ class _InicialScreenState extends State<InicialScreen> {
       return;
     }
 
-    final totalQuantity = _cart.values.fold(0, (sum, quantity) => sum + quantity);
-    final productsSummary = _cart.entries.map((e) => "${e.key.name} (x${e.value})").join(', ');
+    _showPaymentDialog();
+  }
 
-    final newTicket = SaleTicket(
-      eventName: _currentEventName,
-      productName: "Venda de Múltiplos Itens: ($productsSummary)",
-      unitValue: _currentSaleTotal / totalQuantity,
-      quantity: totalQuantity,
-      totalValue: _currentSaleTotal,
-      paymentMethod: _selectedPaymentMethod,
-      saleDate: DateTime.now(),
-    );
-
-    await isarService.addSaleTicket(newTicket);
-
+  void _calculateChange(String value) {
+    final cash = double.tryParse(value) ?? 0.0;
     setState(() {
-      _cart.clear();
-      _currentSaleTotal = 0.0;
+      _changeDue = cash - _currentSaleTotal;
     });
+  }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Venda emitida com sucesso!')),
+  Future<void> _showPaymentDialog() async {
+    _selectedPaymentMethodInDialog = 'Dinheiro';
+    _cashReceivedController.clear();
+    _changeDue = 0.0;
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            final ColorScheme colorScheme = Theme.of(context).colorScheme;
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: Center(
+                child: Text(
+                  'Confirmar Pagamento',
+                  style: TextStyle(
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 24,
+                  ),
+                ),
+              ),
+              content: SizedBox(
+                width: MediaQuery.of(context).size.width * 0.7,
+                height: MediaQuery.of(context).size.height * 0.6,
+                child: Row(
+                  children: [
+                    Expanded(
+                      flex: 1,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              _buildPaymentMethodCard(
+                                context,
+                                setState,
+                                'Cartão',
+                                Icons.credit_card,
+                                _selectedPaymentMethodInDialog,
+                                colorScheme,
+                              ),
+                              _buildPaymentMethodCard(
+                                context,
+                                setState,
+                                'PIX',
+                                Icons.qr_code,
+                                _selectedPaymentMethodInDialog,
+                                colorScheme,
+                              ),
+                            ],
+                          ),
+                          const Spacer(),
+                          _buildPaymentMethodCard(
+                            context,
+                            setState,
+                            'Dinheiro',
+                            Icons.money,
+                            _selectedPaymentMethodInDialog,
+                            colorScheme,
+                          ),
+                        ],
+                      ),
+                    ),
+                    VerticalDivider(width: 1, thickness: 1, color: colorScheme.outline),
+                    Expanded(
+                      flex: 1,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Total a Pagar: R\$ ${_currentSaleTotal.toStringAsFixed(2)}',
+                              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colorScheme.secondary),
+                            ),
+                            const SizedBox(height: 20),
+                            if (_selectedPaymentMethodInDialog == 'Dinheiro') ...[
+                              TextFormField(
+                                controller: _cashReceivedController,
+                                decoration: InputDecoration(
+                                  labelText: 'Valor Recebido (Dinheiro)',
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
+                                  prefixIcon: const Icon(Icons.money),
+                                  filled: true,
+                                  fillColor: colorScheme.surfaceVariant.withOpacity(0.5),
+                                ),
+                                keyboardType: TextInputType.number,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _calculateChange(value);
+                                  });
+                                },
+                                style: TextStyle(color: colorScheme.onSurface),
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                'Troco: R\$ ${_changeDue.toStringAsFixed(2)}',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: _changeDue >= 0 ? colorScheme.tertiary : colorScheme.error,
+                                ),
+                              ),
+                            ] else ...[
+                              Text(
+                                'Pagamento via ${_selectedPaymentMethodInDialog}',
+                                style: TextStyle(fontSize: 18, color: colorScheme.onSurfaceVariant),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(dialogContext).pop();
+                  },
+                  child: Text(
+                    'Cancelar',
+                    style: TextStyle(color: colorScheme.error, fontSize: 18),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (_selectedPaymentMethodInDialog == 'Dinheiro' && _changeDue < 0) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Valor recebido insuficiente!')),
+                      );
+                      return;
+                    }
+                    final totalQuantity = _cart.values.fold(0, (sum, quantity) => sum + quantity);
+                    final productsSummary = _cart.entries.map((e) => "${e.key.name} (x${e.value})").join(', ');
+
+                    final newTicket = SaleTicket(
+                      eventName: _currentEventName,
+                      productName: "Venda de Múltiplos Itens: ($productsSummary)",
+                      unitValue: _currentSaleTotal / totalQuantity,
+                      quantity: totalQuantity,
+                      totalValue: _currentSaleTotal,
+                      paymentMethod: _selectedPaymentMethodInDialog,
+                      saleDate: DateTime.now(),
+                    );
+
+                    await isarService.addSaleTicket(newTicket);
+
+                    setState(() {
+                      _cart.clear();
+                      _currentSaleTotal = 0.0;
+                    });
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Venda emitida com sucesso via $_selectedPaymentMethodInDialog!')),
+                    );
+                    Navigator.of(dialogContext).pop();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: colorScheme.tertiary,
+                    foregroundColor: colorScheme.onTertiary,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  child: const Text('Confirmar Pagamento'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildPaymentMethodCard(
+    BuildContext context,
+    StateSetter setState,
+    String method,
+    IconData icon,
+    String currentSelectedMethod,
+    ColorScheme colorScheme,
+  ) {
+    final bool isSelected = currentSelectedMethod == method;
+    return Card(
+      color: isSelected ? colorScheme.tertiary.withOpacity(0.2) : colorScheme.surfaceVariant,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: isSelected ? colorScheme.tertiary : Colors.transparent,
+          width: 2,
+        ),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () {
+          setState(() {
+            _selectedPaymentMethodInDialog = method;
+            _cashReceivedController.clear();
+            _changeDue = 0.0;
+          });
+        },
+        child: SizedBox(
+          width: 120,
+          height: 100,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 40, color: isSelected ? colorScheme.tertiary : colorScheme.onSurfaceVariant),
+              const SizedBox(height: 8),
+              Text(
+                method,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: isSelected ? colorScheme.tertiary : colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme colorScheme = Theme.of(context).colorScheme;
+    final ColorScheme customColorScheme = ColorScheme(
+      brightness: Brightness.dark,
+      primary: const Color(0xFF10454F), // 22:38-1-hex
+      onPrimary: Colors.white,
+      secondary: const Color(0xFF506266), // 22:38-2-hex
+      onSecondary: Colors.white,
+      error: Colors.red.shade700,
+      onError: Colors.white,
+      background: const Color(0xFF10454F), // Usando a cor primária para o background para um tema mais coeso
+      onBackground: Colors.white,
+      surface: const Color(0xFF506266), // 22:38-2-hex para superfície de cards do carrinho
+      onSurface: Colors.white,
+      surfaceVariant: const Color(0xFF818274), // 22:38-3-hex para superfície de cards de produto
+      onSurfaceVariant: const Color(0xFFA3AB78), // 22:38-4-hex para texto em surfaceVariant
+      outline: const Color(0xFF506266), // 22:38-2-hex para divisores
+      inversePrimary: const Color(0xFF10454F), // 22:38-1-hex para AppBar e DrawerHeader
+      onInverseSurface: Colors.white,
+      tertiary: const Color(0xFFBDE038), 
+      onTertiary: Colors.black,
+    );
+
+    final ColorScheme colorScheme = customColorScheme;
 
     return Scaffold(
       appBar: AppBar(
+        toolbarHeight: 60,
         backgroundColor: colorScheme.inversePrimary,
         title: Text(
-          'Vendas - $_currentEventName',
+          'TrokaFicha',
           style: TextStyle(color: colorScheme.onInverseSurface, fontWeight: FontWeight.bold),
         ),
         leading: Builder(
@@ -155,20 +401,11 @@ class _InicialScreenState extends State<InicialScreen> {
       body: Row(
         children: [
           Expanded(
-            flex: 3,
+            flex: 4,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Text(
-                    'Produtos Disponíveis',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          color: colorScheme.primary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                ),
+                const SizedBox(height: 16.0),
                 Expanded(
                   child: _availableProducts.isEmpty
                       ? Center(
@@ -181,10 +418,10 @@ class _InicialScreenState extends State<InicialScreen> {
                       : GridView.builder(
                           padding: const EdgeInsets.all(16.0),
                           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
+                            crossAxisCount: 4,
                             crossAxisSpacing: 16.0,
                             mainAxisSpacing: 16.0,
-                            childAspectRatio: 1.2,
+                            childAspectRatio: 0.9,
                           ),
                           itemCount: _availableProducts.length,
                           itemBuilder: (context, index) {
@@ -304,35 +541,6 @@ class _InicialScreenState extends State<InicialScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Forma de Pagamento:',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: colorScheme.onSurface),
-                      ),
-                      const SizedBox(height: 8),
-                      DropdownButtonFormField<String>(
-                        value: _selectedPaymentMethod,
-                        decoration: InputDecoration(
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                          filled: true,
-                          fillColor: colorScheme.surfaceVariant,
-                        ),
-                        dropdownColor: colorScheme.surfaceVariant,
-                        style: TextStyle(color: colorScheme.onSurfaceVariant),
-                        onChanged: (String? newValue) {
-                          setState(() {
-                            _selectedPaymentMethod = newValue!;
-                          });
-                        },
-                        items: <String>['Dinheiro', 'Cartão de Crédito', 'Cartão de Débito', 'PIX']
-                            .map<DropdownMenuItem<String>>((String value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(value),
-                          );
-                        }).toList(),
-                      ),
-                      const SizedBox(height: 16),
                       Text(
                         'Total da Compra: R\$ ${_currentSaleTotal.toStringAsFixed(2)}',
                         style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: colorScheme.primary),
